@@ -10,10 +10,11 @@ source ${SOURCE_DIR}/base/rc/config
 mkdir -p /home/application
 useradd -m ${USER} -s /bin/bash
 chown ${USER}:${USER} /home/application
-echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 apt-get update
 apt-get install curl sudo jq -y
+
+echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 add_repository ppa:tsuru/ppa
 apt-get update
