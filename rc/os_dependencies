@@ -4,7 +4,7 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
-function so_dependencies() {
+function os_dependencies() {
     if [ -f ${CURRENT_DIR}/repositories.apt ]; then
         source /var/lib/tsuru/config
         for repo in `cat ${CURRENT_DIR}/repositories.apt`; do
