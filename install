@@ -1,0 +1,24 @@
+#!/bin/bash -el
+
+# Copyright 2015 tsuru authors. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
+SOURCE_DIR=/var/lib/tsuru
+source ${SOURCE_DIR}/base/rc/config
+
+mkdir -p /home/application
+useradd -m ${USER} -s /bin/bash
+chown ${USER}:${USER} /home/application
+echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+apt-get update
+apt-get install curl sudo jq -y
+
+add_repository ppa:tsuru/ppa
+apt-get update
+apt-get install deploy-agent -y
+
+mkdir -p ${SOURCE_DIR}/default
+
+echo "export DEBIAN_FRONTEND=noninteractive" >> /etc/profile
