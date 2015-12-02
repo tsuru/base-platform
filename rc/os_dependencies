@@ -6,7 +6,7 @@
 
 function os_dependencies() {
     if [ -f ${CURRENT_DIR}/repositories.apt ]; then
-        source /var/lib/tsuru/config
+        source /var/lib/tsuru/base/rc/config
         for repo in `cat ${CURRENT_DIR}/repositories.apt`; do
             add_repository ${repo}
         done
