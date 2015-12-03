@@ -19,19 +19,7 @@ fi
 function archive_deploy() {
 	if [ -d $CURRENT_DIR ]
 	then
-		mkdir -p "/tmp/old_code"
-		for file in "$CURRENT_DIR"/*
-		do
-			cp -r $file "/tmp/old_code"
-		done
-		for file in "$CURRENT_DIR"/.*
-		do
-			if [ $file != "$CURRENT_DIR/." ] && [ $file != "$CURRENT_DIR/.." ] && [ $file != "$CURRENT_DIR/.git" ]
-			then
-				cp -r $file "/tmp/old_code"
-			fi
-		done
-		sudo rm -rf $CURRENT_DIR
+		mv $CURRENT_DIR /tmp/old_code
 	fi
 	mkdir -p $CURRENT_DIR
 	curl -sSfNL $1 -o /tmp/archive.tar.gz
