@@ -16,6 +16,19 @@ then
 	exit 1
 fi
 
+function recursive_diff() {
+	dir1=$1
+	dir2=$2
+	IFS=$'\n'
+	exclude=""
+	if [ -f "${dir1}/.gitignore" ]; then
+		exclude="--exclude-from=${dir1}/.gitignore"
+	fi
+	for file in $(grep --exclude-dir=.git --exclude=diff "$exclude" -Ilsr -m 1 '.' "$dir1"); do
+		diff -uN --label "${file/${dir1}/a}" --label "${file/${dir1}/b}" "$file" "${file/${dir1}/${dir2}}"
+	done
+}
+
 function archive_deploy() {
 	if [ -d $CURRENT_DIR ]
 	then
@@ -25,28 +38,20 @@ function archive_deploy() {
 	curl -sSfNL $1 -o /tmp/archive.tar.gz
 	tar -C $CURRENT_DIR -xzf /tmp/archive.tar.gz
 	rm /tmp/archive.tar.gz
-	if [ -d "/tmp/old_code" ]
-	then
-		if [ -a $CURRENT_DIR/.gitignore ]
-		then
-			diff -ruN -x diff -x .git -X $CURRENT_DIR/.gitignore /tmp/old_code $CURRENT_DIR >> $CURRENT_DIR/diff || 2<&0
-		else
-			diff -ruN -x diff -x .git /tmp/old_code $CURRENT_DIR >> $CURRENT_DIR/diff || 2<&0
-		fi
+	if [ -d "/tmp/old_code" ]; then
+		recursive_diff /tmp/old_code $CURRENT_DIR >> $CURRENT_DIR/diff || 2<&0
 		sudo rm -rf tmp/old_code
 	fi
 }
 
 function pre_deploy() {
-	if [ -f ${APP_DIR}/.default_procfile ]
-	then
+	if [ -f ${APP_DIR}/.default_procfile ]; then
 		rm ${APP_DIR}/.default_procfile ${CURRENT_DIR}/Procfile
 	fi
 }
 
 function post_deploy() {
-	if [ ! -f ${CURRENT_DIR}/Procfile ] && [ -f ${SOURCE_DIR}/default/Procfile ]
-	then
+	if [ ! -f ${CURRENT_DIR}/Procfile ] && [ -f ${SOURCE_DIR}/default/Procfile ]; then
 		cp ${SOURCE_DIR}/default/Procfile ${CURRENT_DIR}/Procfile
 		touch ${APP_DIR}/.default_procfile
 	fi
