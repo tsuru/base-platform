@@ -12,7 +12,7 @@ useradd -m ${USER} -s /bin/bash
 chown ${USER}:${USER} /home/application
 
 apt-get update
-apt-get install curl sudo jq -y
+apt-get install curl sudo jq rsync -y
 
 echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 

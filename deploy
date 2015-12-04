@@ -24,23 +24,27 @@ function recursive_diff() {
 	if [ -f "${dir1}/.gitignore" ]; then
 		exclude="--exclude-from=${dir1}/.gitignore"
 	fi
-	for file in $(grep --exclude-dir=.git --exclude=diff "$exclude" -Ilsr -m 1 '.' "$dir1"); do
+	for file in $(grep --exclude-dir=.git --exclude=diff $exclude -Ilsr -m 1 '.' "$dir1"); do
 		diff -uN --label "${file/${dir1}/a}" --label "${file/${dir1}/b}" "$file" "${file/${dir1}/${dir2}}"
 	done
 }
 
 function archive_deploy() {
-	if [ -d $CURRENT_DIR ]
-	then
-		mv $CURRENT_DIR /tmp/old_code
+	NEW_CODE_DIR=$(mktemp -d)
+	DIFF_FILE=$(mktemp)
+	curl -sSfNL $1 -o /tmp/archive.tar.gz
+	tar -C $NEW_CODE_DIR -xzf /tmp/archive.tar.gz
+	rm /tmp/archive.tar.gz
+	if [ -d $CURRENT_DIR ]; then
+		recursive_diff $CURRENT_DIR $NEW_CODE_DIR > $DIFF_FILE || 2<&0
 	fi
 	mkdir -p $CURRENT_DIR
-	curl -sSfNL $1 -o /tmp/archive.tar.gz
-	tar -C $CURRENT_DIR -xzf /tmp/archive.tar.gz
-	rm /tmp/archive.tar.gz
-	if [ -d "/tmp/old_code" ]; then
-		recursive_diff /tmp/old_code $CURRENT_DIR >> $CURRENT_DIR/diff || 2<&0
-		sudo rm -rf tmp/old_code
+	rsync -rlpgo --delete --checksum $NEW_CODE_DIR/ $CURRENT_DIR
+	rm -rf $NEW_CODE_DIR
+	if [ -s $DIFF_FILE ]; then
+		mv $DIFF_FILE $CURRENT_DIR/diff
+	else
+		rm $DIFF_FILE
 	fi
 }
 
