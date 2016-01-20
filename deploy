@@ -19,6 +19,7 @@ fi
 function recursive_diff() {
 	dir1=$1
 	dir2=$2
+	old_ifs=$IFS
 	IFS=$'\n'
 	exclude=""
 	if [ -f "${dir1}/.gitignore" ]; then
@@ -27,6 +28,7 @@ function recursive_diff() {
 	for file in $(grep --exclude-dir=.git --exclude=diff $exclude -Ilsr -m 1 '.' "$dir1"); do
 		diff -uN --label "${file/${dir1}/a}" --label "${file/${dir1}/b}" "$file" "${file/${dir1}/${dir2}}"
 	done
+	IFS=$old_ifs
 }
 
 function archive_deploy() {
