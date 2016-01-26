@@ -37,8 +37,10 @@ function archive_deploy() {
 	curl -sSfNL $1 -o /tmp/archive.tar.gz
 	tar -C $NEW_CODE_DIR -xzf /tmp/archive.tar.gz
 	rm /tmp/archive.tar.gz
-	if [ -d $CURRENT_DIR ]; then
-		recursive_diff $CURRENT_DIR $NEW_CODE_DIR > $DIFF_FILE || 2<&0
+	if [ -n "$EXPERIMENTAL_DIFF_ENABLED" ]; then
+		if [ -d $CURRENT_DIR ]; then
+			recursive_diff $CURRENT_DIR $NEW_CODE_DIR > $DIFF_FILE || 2<&0
+		fi
 	fi
 	mkdir -p $CURRENT_DIR
 	rsync -rlpgo --delete --checksum $NEW_CODE_DIR/ $CURRENT_DIR
