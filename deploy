@@ -43,7 +43,8 @@ function archive_deploy() {
 		fi
 	fi
 	mkdir -p $CURRENT_DIR
-	rsync -rlpgo --delete --checksum $NEW_CODE_DIR/ $CURRENT_DIR
+	rsync_cmd="rsync -rlpgo --delete --checksum $PLATFORM_EXTRA_RSYNC_ARGS $NEW_CODE_DIR/ $CURRENT_DIR"
+	eval $rsync_cmd
 	rm -rf $NEW_CODE_DIR
 	if [ -s $DIFF_FILE ]; then
 		mv $DIFF_FILE $CURRENT_DIR/diff
