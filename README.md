@@ -10,7 +10,7 @@ tsuru platforms:
 - create the /home/application directory
 - properly set paths permissions
 - install deploy-agent
-- plase the base deploy script in the path ``/var/lib/tsuru/base/deploy``
+- place the base deploy script in the path ``/var/lib/tsuru/base/deploy``
 
 The image also provides the following required components:
 
