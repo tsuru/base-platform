@@ -12,14 +12,14 @@ useradd -m ${USER} -s /bin/bash
 chown ${USER}:${USER} /home/application
 
 cp ${SOURCE_DIR}/base/apt.conf.d/local /etc/apt/apt.conf.d/local
-buildDeps='curl sudo jq rsync netcat-openbsd net-tools telnet vim-tiny lsof apt-transport-https'
+buildDeps='curl sudo jq rsync netcat-openbsd net-tools telnet vim-tiny lsof'
 apt-get update
 apt-get install -y --no-install-recommends $buildDeps
 
-echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-curl -Lk https://packagecloud.io/install/repositories/tsuru/stable/script.deb.sh | bash
+curl -k https://packagecloud.io/install/repositories/tsuru/stable/script.deb.sh | bash
 apt-get install -y deploy-agent
 
+echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 mkdir -p ${SOURCE_DIR}/default
 
 echo "export DEBIAN_FRONTEND=noninteractive" >> /etc/profile
