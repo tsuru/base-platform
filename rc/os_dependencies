@@ -13,12 +13,12 @@ function os_dependencies() {
     fi
     if [ -f ${CURRENT_DIR}/requirements.apt ]; then
         set +e
-        sudo -E apt-get install $(cat ${CURRENT_DIR}/requirements.apt) -y --force-yes
+        sudo -E apt-get install $(cat ${CURRENT_DIR}/requirements.apt) -y --force-yes --no-install-recommends
         status=$?
         set -e
         if [ ${status} != 0 ]; then
             sudo apt-get update
-            sudo -E apt-get install $(cat ${CURRENT_DIR}/requirements.apt) -y --force-yes
+            sudo -E apt-get install $(cat ${CURRENT_DIR}/requirements.apt) -y --force-yes --no-install-recommends
         fi
     fi
 }
