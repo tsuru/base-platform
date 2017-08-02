@@ -9,3 +9,4 @@ ADD	. /var/lib/tsuru/base
 RUN set -ex; \
     /var/lib/tsuru/base/install;  \
     rm -rf /var/lib/apt/lists/*
+USER ubuntu
