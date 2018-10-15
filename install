@@ -16,7 +16,7 @@ rm -f ${HOME}/.bash_logout
 
 cp ${SOURCE_DIR}/base/apt.conf.d/local /etc/apt/apt.conf.d/local
 buildDeps='curl sudo jq rsync netcat-openbsd net-tools telnet vim-tiny lsof ca-certificates'
-apt-get update
+apt-get update && apt-get upgrade -y
 apt-get install -y --no-install-recommends $buildDeps
 
 curl -k https://packagecloud.io/install/repositories/tsuru/stable/script.deb.sh | bash
