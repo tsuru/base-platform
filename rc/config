@@ -30,6 +30,8 @@ function add_repository() {
 		ppa=$(echo $1 | awk -F : '{print $2}')
 		repository="deb http://ppa.launchpad.net/${ppa}/ubuntu ${UBUNTU_RELEASE} main"
 		get_ppa_key $ppa
+	elif [[ "$*" =~ ^deb(-src)?.+ ]]; then
+		repository=$*
 	else
 		repository=$1
 		if [[ "$2" =~ ^0x.+ ]]; then

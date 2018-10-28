@@ -7,9 +7,9 @@
 function os_dependencies() {
     if [ -f ${CURRENT_DIR}/repositories.apt ]; then
         source /var/lib/tsuru/base/rc/config
-        for repo in `cat ${CURRENT_DIR}/repositories.apt`; do
+        while read repo ; do
             add_repository ${repo}
-        done
+        done < ${CURRENT_DIR}/repositories.apt
     fi
     if [ -f ${CURRENT_DIR}/requirements.apt ]; then
         set +e
