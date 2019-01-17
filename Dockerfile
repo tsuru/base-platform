@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
-FROM	ubuntu-debootstrap:14.04
-RUN	locale-gen en_US.UTF-8
+FROM    ubuntu:18.04
+RUN	apt update && apt install locales && locale-gen en_US.UTF-8
 ENV	LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8 DEBIAN_FRONTEND=noninteractive
 ADD	. /var/lib/tsuru/base
 RUN set -ex; \
