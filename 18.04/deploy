@@ -1,0 +1,90 @@
+#!/bin/bash -el
+
+# Copyright 2015 tsuru authors. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
+if [[ "$TSURU_PLATFORM_DEBUG" != "" ]]; then
+	set -x
+fi
+
+cd /
+
+SOURCE_DIR=/var/lib/tsuru
+
+if [ $# -lt 1 ]
+then
+	echo "Usage:"
+	echo
+	echo "  % $0 <type> [param_1] [param_2] ... [param_n]"
+	exit 1
+fi
+
+function recursive_diff() {
+	dir1=$1
+	dir2=$2
+	old_ifs=$IFS
+	IFS=$'\n'
+	exclude=""
+	if [ -f "${dir1}/.gitignore" ]; then
+		exclude="--exclude-from=${dir1}/.gitignore"
+	fi
+	for file in $(grep --exclude-dir=.git --exclude=diff $exclude -Ilsr -m 1 '.' "$dir1"); do
+		diff -uN --label "${file/${dir1}/a}" --label "${file/${dir1}/b}" "$file" "${file/${dir1}/${dir2}}"
+	done
+	IFS=$old_ifs
+}
+
+function archive_deploy() {
+	NEW_CODE_DIR=$(mktemp -d)
+	DIFF_FILE=$(mktemp)
+	curl -sSfNL $1 -o /tmp/archive.tar.gz
+	tar -C $NEW_CODE_DIR -xzf /tmp/archive.tar.gz
+	rm /tmp/archive.tar.gz
+	if [ -n "$EXPERIMENTAL_DIFF_ENABLED" ]; then
+		if [ -d $CURRENT_DIR ]; then
+			recursive_diff $CURRENT_DIR $NEW_CODE_DIR > $DIFF_FILE || 2<&0
+		fi
+	fi
+	mkdir -p $CURRENT_DIR
+	rsync_cmd="rsync -rlpgo --delete --checksum $PLATFORM_EXTRA_RSYNC_ARGS $NEW_CODE_DIR/ $CURRENT_DIR"
+	eval $rsync_cmd
+	rm -rf $NEW_CODE_DIR
+	if [ -s $DIFF_FILE ]; then
+		mv $DIFF_FILE $CURRENT_DIR/diff
+	else
+		rm $DIFF_FILE
+	fi
+}
+
+function pre_deploy() {
+	if [ -f ${APP_DIR}/.default_procfile ]; then
+		rm ${APP_DIR}/.default_procfile ${CURRENT_DIR}/Procfile
+	fi
+}
+
+function post_deploy() {
+	if [ ! -f ${CURRENT_DIR}/Procfile ] && [ -f ${SOURCE_DIR}/default/Procfile ]; then
+		cp ${SOURCE_DIR}/default/Procfile ${CURRENT_DIR}/Procfile
+		touch ${APP_DIR}/.default_procfile
+	fi
+}
+
+
+source ${SOURCE_DIR}/base/rc/config
+source ${SOURCE_DIR}/base/rc/os_dependencies
+
+pre_deploy
+case $1 in
+	"archive")
+		archive_deploy $2
+		shift; shift
+		;;
+	*)
+		echo "FATAL: this deployment method is no longer supported"
+		exit 1
+		;;
+esac
+post_deploy
+
+os_dependencies
