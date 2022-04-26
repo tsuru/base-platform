@@ -1,0 +1,29 @@
+name: CI
+on: [push]
+jobs:
+  publish:
+    if: contains(github.ref, 'refs/heads/master')
+
+    strategy:
+      matrix:
+        version: ["14.04", "18.04", "22.04", latest]
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout code
+      uses: actions/checkout@v2
+
+    - name: docker login
+      uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: build tsuru/base-platform:${{ matrix.version }}
+      run: |-
+        docker build -t tsuru/base-platform:${{ matrix.version }} ${{ matrix.version }}
+
+    - name: push tsuru/base-platform:${{ matrix.version }} to Docker Hub
+      run: |-
+        docker push tsuru/base-platform:${{ matrix.version }}
