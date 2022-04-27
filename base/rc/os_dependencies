@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# Copyright 2022 tsuru authors. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+set -euf -o pipefail
+
+# removes all '#' and all characters afterwards; trim whitespaces; carriage return and empty lines
+function cat_without_hash_comments() {
+  local file_path=${1}
+  cat ${file_path} \
+    | sed "s/#.*$//g" \
+    | sed "s/^[[:space:]]*//g" \
+    | sed "s/[[:space:]]*$//g" \
+    | sed "s/\r$//" \
+    | sed "/^$/d"
+}
+
+function os_dependencies() {
+  if [[ -f "${CURRENT_DIR}/repositories.apt" ]]; then
+    echo_debug ">>> repositories.apt found: adding extra APT repositories"
+
+    while read repo ; do
+      add_repository ${repo}
+    done < <(cat_without_hash_comments "${CURRENT_DIR}/repositories.apt")
+  fi
+
+  if [[ -f "${CURRENT_DIR}/requirements.apt" ]]; then
+    echo_debug ">>> requirements.apt found: installing system package(s) from it"
+    sudo -E apt-get update || true
+    sudo -E apt-get install -y --force-yes --no-install-recommends \
+      $(cat_without_hash_comments "${CURRENT_DIR}/requirements.apt")
+  fi
+}
+
+function add_repository() {
+  local repository=${1}
+
+  case ${repository} in
+    deb*)
+      local repository_entries=${*};;
+
+    *)
+      local ppa=$(echo ${repository} | sed 's/ppa://')
+
+      local repository_entries=$(cat <<-EOF
+deb https://ppa.launchpadcontent.net/${ppa}/ubuntu ${UBUNTU_RELEASE} main
+deb-src https://ppa.launchpadcontent.net/${ppa}/ubuntu ${UBUNTU_RELEASE} main
+EOF
+)
+      local fingerprint=${2:-${ppa}}
+      get_ppa_key ${fingerprint};;
+  esac
+
+  local filesum=$(echo ${repository_entries} | sha1sum | awk '{print $1}')
+  echo "${repository_entries}" | sudo -E tee >/dev/null 2>&1 "/etc/apt/sources.list.d/tsuru_${filesum}.list"
+}
+
+function get_ppa_key() {
+  local ppa_or_fingerprint=${1}
+
+  if [[ ${ppa_or_fingerprint} =~ ^0x.+ ]]; then
+    local fingerprint=${ppa_or_fingerprint}
+  else
+    user=$(echo ${ppa_or_fingerprint} | awk -F / '{print $1}')
+    repo=$(echo ${ppa_or_fingerprint} | awk -F / '{print $2}')
+    api_url="https://launchpad.net/api/1.0/~${user}/+archive/ubuntu/${repo}"
+    local fingerprint=$(curl -sS "${api_url}" | jq -r ".signing_key_fingerprint")
+  fi
+
+  sudo -E apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv ${fingerprint}
+}

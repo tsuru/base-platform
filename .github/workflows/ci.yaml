@@ -6,7 +6,7 @@ jobs:
 
     strategy:
       matrix:
-        version: ["14.04", "18.04", "22.04", latest]
+        version: ["22.04", latest]
 
     runs-on: ubuntu-latest
 
@@ -22,7 +22,7 @@ jobs:
 
     - name: build tsuru/base-platform:${{ matrix.version }}
       run: |-
-        docker build -t tsuru/base-platform:${{ matrix.version }} ${{ matrix.version }}
+        docker build --build-arg ubuntu_version=${{ matrix.version }} -t tsuru/base-platform:${{ matrix.version }} .
 
     - name: push tsuru/base-platform:${{ matrix.version }} to Docker Hub
       run: |-

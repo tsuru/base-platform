@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Copyright 2022 tsuru authors. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
+APP_DIR=/home/application
+CURRENT_DIR=${APP_DIR}/current
+USER=ubuntu
+HOME=/home/${USER}
+UBUNTU_RELEASE=$(test -f /etc/lsb-release && source /etc/lsb-release && echo ${DISTRIB_CODENAME})
+
+function echo_debug() {
+  if [ ! -z "${TSURU_DEBUG}" ]; then
+    echo "$@"
+  fi
+}

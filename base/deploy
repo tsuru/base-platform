@@ -3,22 +3,19 @@
 # Copyright 2022 tsuru authors. All rights reserved.
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
+set -eu -o pipefail
 
-if [[ "$TSURU_PLATFORM_DEBUG" != "" ]]; then
-  set -x
-fi
+[[ ${TSURU_PLATFORM_DEBUG} ]] && set -x
 
 cd /
 
 SOURCE_DIR=/var/lib/tsuru
 
-if [ $# -lt 1 ]
-then
+function usage() {
   echo "Usage:"
   echo
-  echo "  % $0 <type> [param_1] [param_2] ... [param_n]"
-  exit 1
-fi
+  echo "  % ${0} <type> [param_1] [param_2] ... [param_n]"
+}
 
 function recursive_diff() {
   dir1=$1
@@ -73,6 +70,11 @@ function post_deploy() {
 
 source ${SOURCE_DIR}/base/rc/config
 source ${SOURCE_DIR}/base/rc/os_dependencies
+
+if [[ ${#} -lt 1 ]]; then
+  usage
+  exit 1
+fi
 
 pre_deploy
 case $1 in
