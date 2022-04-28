@@ -14,9 +14,22 @@ COPY base /var/lib/tsuru/base
 
 RUN set -ex \
     && apt update \
-    && apt install locales \
+    && apt install -y --no-install-recommends \
+        locales curl sudo jq rsync netcat-openbsd net-tools telnet vim-tiny lsof openssl ca-certificates gnupg2 \
+    && rm -rf /var/lib/apt/lists/* \
     && locale-gen en_US.UTF-8 \
-    && /var/lib/tsuru/base/install \
-    && rm -rf /var/lib/apt/lists/*
+    && . /var/lib/tsuru/base/rc/config \
+    && addgroup --gid ${USER_GID} ${USER} \
+    && useradd -m --home-dir ${HOME} --gid ${USER_GID} --uid ${USER_UID} ${USER} \
+    && rm -f ${HOME}/.bash_logout \
+    && mkdir -p /home/application /var/lib/tsuru/default \
+    && chown -R ${USER}:${USER} /home/application /var/lib/tsuru/default \
+    && echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
+    && echo "export DEBIAN_FRONTEND=noninteractive" >> /etc/profile \
+    && curl -s https://api.github.com/repos/tsuru/deploy-agent/releases/latest \
+      | jq -r '.assets[].browser_download_url | select(contains("tsuru_unit_agent")) | select(endswith("linux_amd64.tar.gz"))' \
+      | xargs curl -fsSL -o- \
+      | tar -C /usr/local/bin -xzvf- tsuru_unit_agent \
+    && tsuru_unit_agent --version
 
 USER ubuntu

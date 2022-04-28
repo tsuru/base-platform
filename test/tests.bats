@@ -7,6 +7,32 @@
 load '/opt/bats-support/load.bash'
 load '/opt/bats-assert/load.bash'
 
+@test 'ensure "ubuntu" user and group exist with UID and GID 1000 respectively' {
+  run id ubuntu
+  assert_success
+
+  run id -u ubuntu
+  assert_output '1000'
+
+  run id -g ubuntu
+  assert_output '1000'
+}
+
+@test 'ensure ubuntu user can run as root trough sudo command (without password)' {
+  run id -nu
+  assert_success
+  assert_output 'ubuntu'
+
+  run sudo id -nu
+  assert_success
+  assert_output 'root'
+}
+
+@test '~/.bash_logout should not exist' {
+  # in order to avoid errors when running clear_console without a terminal
+  [ ! -f /home/ubuntu/.bash_logout ]
+}
+
 @test 'reading requirements.apt w/ carriage return (CR+LF)' {
   echo -e 'openssl\r' >  ${BATS_TEST_TMPDIR}/requirements.apt
   echo -e 'vim\r'     >> ${BATS_TEST_TMPDIR}/requirements.apt
@@ -100,6 +126,12 @@ EOF
 
   run sudo apt-key finger 2>/dev/null
   assert_output --partial '2445 455D 0F8F B8F9 299E  7A0A F224 4A5C 0D4D 9B55'
+}
+
+@test 'ensure tsuru_unit_agent is installed in the system path' {
+  run tsuru_unit_agent --version
+  assert_success
+  assert_output --partial 'deploy-agent version'
 }
 
 # vim : ft=bash

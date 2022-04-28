@@ -7,10 +7,12 @@
 APP_DIR=/home/application
 CURRENT_DIR=${APP_DIR}/current
 USER=ubuntu
+USER_GID=1000
+USER_UID=1000
 HOME=/home/${USER}
-UBUNTU_RELEASE=$(test -f /etc/lsb-release && source /etc/lsb-release && echo ${DISTRIB_CODENAME})
+UBUNTU_RELEASE=$(. /etc/lsb-release && echo ${DISTRIB_CODENAME})
 
-function echo_debug() {
+echo_debug() {
   if [ ! -z "${TSURU_DEBUG}" ]; then
     echo "$@"
   fi
