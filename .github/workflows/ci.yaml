@@ -1,8 +1,25 @@
 name: CI
 on: [push]
 jobs:
+  test:
+    strategy:
+      matrix:
+        version: ["22.04", latest]
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout code
+      uses: actions/checkout@v2
+
+    - name: test against Ubuntu ${{ matrix.version }}
+      run: |-
+        UBUNTU_VERSION_TEST=${{ matrix.version }} make test
+
   publish:
     if: contains(github.ref, 'refs/heads/master')
+
+    needs: [test]
 
     strategy:
       matrix:
