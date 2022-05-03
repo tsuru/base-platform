@@ -79,9 +79,12 @@ EOF
 }
 
 @test 'adding extra APT repositories from repositories.apt' {
-  cat > ${BATS_TEST_TMPDIR}/repositories.apt <<-EOF
-deb https://packagecloud.io/tsuru/rc/ubuntu/ jammy main
-deb-src https://packagecloud.io/tsuru/rc/ubuntu/ jammy main
+  export UBUNTU_RELEASE=$(source /etc/lsb-release && echo $DISTRIB_CODENAME)
+  export CURRENT_DIR=${BATS_TEST_TMPDIR}
+
+  cat > ${CURRENT_DIR}/repositories.apt <<-EOF
+deb https://packagecloud.io/tsuru/rc/ubuntu/ ${UBUNTU_RELEASE} main
+deb-src https://packagecloud.io/tsuru/rc/ubuntu/ ${UBUNTU_RELEASE} main
 ppa:tsuru/ppa
 pogo-dev/stable 0x2445455D0F8FB8F9299E7A0AF2244A5C0D4D9B55
 EOF
@@ -89,41 +92,42 @@ EOF
   [ -r /var/lib/tsuru/base/rc/os_dependencies ]
   source /var/lib/tsuru/base/rc/os_dependencies
 
-  export CURRENT_DIR=${BATS_TEST_TMPDIR}
-  export UBUNTU_RELEASE=$(source /etc/lsb-release && echo $DISTRIB_CODENAME)
-
   run os_dependencies
   assert_success
 
-  expected_file="/etc/apt/sources.list.d/tsuru_96c980b0d58bf0127d270b571d9223d57dac260e.list"
+  expected_source_file="deb https://packagecloud.io/tsuru/rc/ubuntu/ ${UBUNTU_RELEASE} main"
+  expected_file="/etc/apt/sources.list.d/tsuru_$(echo ${expected_source_file} | sha1sum | awk '{print $1}').list"
   [ -r ${expected_file} ]
   run cat ${expected_file}
-  assert_output 'deb https://packagecloud.io/tsuru/rc/ubuntu/ jammy main'
+  assert_output "${expected_source_file}"
 
-  expected_file='/etc/apt/sources.list.d/tsuru_f0f3b70e50fa0bbe4329f1af6d855573c5f22bd3.list'
+  expected_source_file="deb-src https://packagecloud.io/tsuru/rc/ubuntu/ ${UBUNTU_RELEASE} main"
+  expected_file="/etc/apt/sources.list.d/tsuru_$(echo ${expected_source_file} | sha1sum | awk '{print $1}').list"
   [ -r ${expected_file} ]
   run cat ${expected_file}
-  assert_output 'deb-src https://packagecloud.io/tsuru/rc/ubuntu/ jammy main'
+  assert_output "${expected_source_file}"
 
-  expected_file='/etc/apt/sources.list.d/tsuru_435caf3a8bc86b0ae984aab774786109394ac445.list'
-  [ -r ${expected_file} ]
-  run cat ${expected_file}
-  assert_output - <<-EOF
-deb https://ppa.launchpadcontent.net/tsuru/ppa/ubuntu jammy main
-deb-src https://ppa.launchpadcontent.net/tsuru/ppa/ubuntu jammy main
+  expected_source_file=$(cat <<-EOF
+deb https://ppa.launchpadcontent.net/tsuru/ppa/ubuntu ${UBUNTU_RELEASE} main
+deb-src https://ppa.launchpadcontent.net/tsuru/ppa/ubuntu ${UBUNTU_RELEASE} main
 EOF
-
+)
+  expected_file="/etc/apt/sources.list.d/tsuru_$(echo ${expected_source_file} | sha1sum | awk '{print $1}').list"
+  [ -r ${expected_file} ]
+  run cat ${expected_file}
+  assert_output "${expected_source_file}"
   run sudo apt-key finger 2>/dev/null
   assert_output --partial 'B0DE 9C5D EBF4 8635 9EB2  55B0 3B01 53D0 383F 073D'
 
-  expected_file='/etc/apt/sources.list.d/tsuru_940069a563e061f3dfd8704ff3b76577c031b76f.list'
+  expected_source_file=$(cat <<-EOF
+deb https://ppa.launchpadcontent.net/pogo-dev/stable/ubuntu ${UBUNTU_RELEASE} main
+deb-src https://ppa.launchpadcontent.net/pogo-dev/stable/ubuntu ${UBUNTU_RELEASE} main
+EOF
+)
+  expected_file="/etc/apt/sources.list.d/tsuru_$(echo ${expected_source_file} | sha1sum | awk '{print $1}').list"
   [ -r ${expected_file} ]
   run cat ${expected_file}
-  assert_output - <<-EOF
-deb https://ppa.launchpadcontent.net/pogo-dev/stable/ubuntu jammy main
-deb-src https://ppa.launchpadcontent.net/pogo-dev/stable/ubuntu jammy main
-EOF
-
+  assert_output "${expected_source_file}"
   run sudo apt-key finger 2>/dev/null
   assert_output --partial '2445 455D 0F8F B8F9 299E  7A0A F224 4A5C 0D4D 9B55'
 }
@@ -134,4 +138,4 @@ EOF
   assert_output --partial 'deploy-agent version'
 }
 
-# vim : ft=bash
+# vim: ft=bash
