@@ -23,7 +23,7 @@ jobs:
 
     strategy:
       matrix:
-        version: ["22.04", latest]
+        version: ["20.04", "22.04", latest]
 
     runs-on: ubuntu-latest
 
