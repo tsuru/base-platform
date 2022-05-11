@@ -3,7 +3,6 @@
 # Copyright 2022 tsuru authors. All rights reserved.
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
-set -euf -o pipefail
 
 # removes all '#' and all characters afterwards; trim whitespaces; carriage return and empty lines
 function cat_without_hash_comments() {

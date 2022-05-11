@@ -3,7 +3,6 @@
 # Copyright 2022 tsuru authors. All rights reserved.
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
-set -e -o pipefail
 
 [[ ${TSURU_PLATFORM_DEBUG:-false} == "true" ]] && set -x
 
