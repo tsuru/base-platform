@@ -25,6 +25,6 @@ RUN set -ex \
     && mkdir -p /home/application /var/lib/tsuru/default \
     && chown -R ${USER}:${USER} /home/application /var/lib/tsuru/default \
     && echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
-    && echo "export DEBIAN_FRONTEND=noninteractive" >> /etc/profile \
+    && echo "export DEBIAN_FRONTEND=noninteractive" >> /etc/profile
 
 USER ubuntu

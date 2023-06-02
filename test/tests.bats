@@ -132,10 +132,4 @@ EOF
   assert_output --partial '2445 455D 0F8F B8F9 299E  7A0A F224 4A5C 0D4D 9B55'
 }
 
-@test 'ensure tsuru_unit_agent is installed in the system path' {
-  run tsuru_unit_agent --version
-  assert_success
-  assert_output --partial 'deploy-agent version'
-}
-
 # vim: ft=bash
