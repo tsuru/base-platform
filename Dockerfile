@@ -26,10 +26,5 @@ RUN set -ex \
     && chown -R ${USER}:${USER} /home/application /var/lib/tsuru/default \
     && echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
     && echo "export DEBIAN_FRONTEND=noninteractive" >> /etc/profile \
-    && curl -s https://api.github.com/repos/tsuru/deploy-agent/releases/latest \
-      | jq -r '.assets[].browser_download_url | select(contains("tsuru_unit_agent")) | select(endswith("linux_amd64.tar.gz"))' \
-      | xargs curl -fsSL -o- \
-      | tar -C /usr/local/bin -xzvf- tsuru_unit_agent \
-    && tsuru_unit_agent --version
 
 USER ubuntu
