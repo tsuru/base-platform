@@ -12,18 +12,7 @@ tsuru platforms:
 - install deploy-agent
 - place the base deploy script in the path ``/var/lib/tsuru/base/deploy``
 
-The image also provides the following required components:
-
-deploy-agent
-------------
-
-This is the agent responsible for establishing connection between application
-containers and the tsuru API. See [tsuru/deploy-agent](https://github.com/tsuru/deploy-agent) for more details.
-
-base deploy script
-------------------
-
-This base script does the following steps:
+The image also provides the script that does the following steps:
 
 1. Downloads the archive provided by the tsuru API
 1. Extracts it in the ``/home/application/current`` directory
