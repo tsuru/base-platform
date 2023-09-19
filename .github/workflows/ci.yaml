@@ -42,6 +42,6 @@ jobs:
       with:
         context: .
         push: true
-        tags: ${{ matrix.version }}
+        tags: tsuru/base-platform:${{ matrix.version }}
         platforms: linux/amd64, linux/arm64
         build-args: ubuntu_version=${{ matrix.version }}
