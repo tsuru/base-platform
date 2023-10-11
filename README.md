@@ -19,9 +19,6 @@ The image also provides the script that does the following steps:
 1. Install operating system dependencies
 1. Handle default Procfiles (stored in the directory ``/var/lib/tsuru/default``)
 
-It's possible to build platforms that do not use this image, but you need to
-ensure that deploy-agent is installed, and that you provide a deploy script
-that does everything that the base deploy script does.
 
 You may also invoke the install and deploy scripts manually, as the buildpack
 platform does:
