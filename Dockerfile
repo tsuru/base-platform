@@ -19,8 +19,8 @@ RUN set -ex \
     && rm -rf /var/lib/apt/lists/* \
     && locale-gen en_US.UTF-8 \
     && . /var/lib/tsuru/base/rc/config \
-    && addgroup --gid ${USER_GID} ${USER} \
-    && useradd -m --home-dir ${HOME} --gid ${USER_GID} --uid ${USER_UID} ${USER} \
+    && getent group ${USER} > /dev/null || addgroup --gid ${USER_GID} ${USER} \
+    && getent passwd ${USER} > /dev/null || useradd -m --home-dir ${HOME} --gid ${USER_GID} --uid ${USER_UID} ${USER} \
     && rm -f ${HOME}/.bash_logout \
     && mkdir -p /home/application /var/lib/tsuru/default \
     && chown -R ${USER}:${USER} /home/application /var/lib/tsuru/default \
