@@ -34,9 +34,9 @@ load '/opt/bats-assert/load.bash'
 }
 
 @test 'reading requirements.apt w/ carriage return (CR+LF)' {
-  echo -e 'openssl\r' >  ${BATS_TEST_TMPDIR}/requirements.apt
-  echo -e 'vim\r'     >> ${BATS_TEST_TMPDIR}/requirements.apt
-  echo -e 'bash\r'    >> ${BATS_TEST_TMPDIR}/requirements.apt
+  echo -e 'openssl\r' >${BATS_TEST_TMPDIR}/requirements.apt
+  echo -e 'vim\r' >>${BATS_TEST_TMPDIR}/requirements.apt
+  echo -e 'bash\r' >>${BATS_TEST_TMPDIR}/requirements.apt
 
   [ -r /var/lib/tsuru/base/rc/os_dependencies ]
   source /var/lib/tsuru/base/rc/os_dependencies
@@ -46,7 +46,7 @@ load '/opt/bats-assert/load.bash'
 }
 
 @test 'reading requirements.apt with comments, whitespaces and empty line' {
-  cat > ${BATS_TEST_TMPDIR}/requirements.apt <<-EOF
+  cat >${BATS_TEST_TMPDIR}/requirements.apt <<-EOF
 # Installing openssl for X purpose
 openssl
 example # Installing exampe to mitigate Y
@@ -63,7 +63,7 @@ EOF
 }
 
 @test 'install system package from requirements.apt' {
-  echo "neofetch" > ${BATS_TEST_TMPDIR}/requirements.apt
+  echo "neofetch" >"${BATS_TEST_TMPDIR}"/requirements.apt
 
   [ -r /var/lib/tsuru/base/rc/os_dependencies ]
   source /var/lib/tsuru/base/rc/os_dependencies
@@ -78,15 +78,15 @@ EOF
   assert_output --regexp '^Neofetch [^ ]+$'
 }
 
-@test 'adding extra APT repositories from repositories.apt' {
+@test 'adding extra APT repositories from repositories.apt from deb' {
   export UBUNTU_RELEASE=$(source /etc/lsb-release && echo $DISTRIB_CODENAME)
   export CURRENT_DIR=${BATS_TEST_TMPDIR}
 
-  cat > ${CURRENT_DIR}/repositories.apt <<-EOF
-deb https://packagecloud.io/tsuru/rc/ubuntu/ ${UBUNTU_RELEASE} main
-deb-src https://packagecloud.io/tsuru/rc/ubuntu/ ${UBUNTU_RELEASE} main
-ppa:tsuru/ppa
-pogo-dev/stable 0x2445455D0F8FB8F9299E7A0AF2244A5C0D4D9B55
+  sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+  cat >${CURRENT_DIR}/repositories.apt <<-EOF
+deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${UBUNTU_RELEASE} stable
 EOF
 
   [ -r /var/lib/tsuru/base/rc/os_dependencies ]
@@ -95,41 +95,111 @@ EOF
   run os_dependencies
   assert_success
 
-  expected_source_file="deb https://packagecloud.io/tsuru/rc/ubuntu/ ${UBUNTU_RELEASE} main"
+  expected_source_file="deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${UBUNTU_RELEASE} stable"
   expected_file="/etc/apt/sources.list.d/tsuru_$(echo ${expected_source_file} | sha1sum | awk '{print $1}').list"
-  [ -r ${expected_file} ]
-  run cat ${expected_file}
+  [ -r "${expected_file}" ]
+  run cat "${expected_file}"
   assert_output "${expected_source_file}"
 
-  expected_source_file="deb-src https://packagecloud.io/tsuru/rc/ubuntu/ ${UBUNTU_RELEASE} main"
-  expected_file="/etc/apt/sources.list.d/tsuru_$(echo ${expected_source_file} | sha1sum | awk '{print $1}').list"
-  [ -r ${expected_file} ]
-  run cat ${expected_file}
-  assert_output "${expected_source_file}"
+  run sudo apt-get update -y
+  assert_success
+  assert_output --partial "https://download.docker.com/linux/ubuntu ${UBUNTU_RELEASE}/stable $(dpkg --print-architecture) Packages"
+}
 
-  expected_source_file=$(cat <<-EOF
-deb https://ppa.launchpadcontent.net/tsuru/ppa/ubuntu ${UBUNTU_RELEASE} main
-deb-src https://ppa.launchpadcontent.net/tsuru/ppa/ubuntu ${UBUNTU_RELEASE} main
+@test 'adding extra APT repositories from repositories.apt from deb-src' {
+  export UBUNTU_RELEASE=$(source /etc/lsb-release && echo $DISTRIB_CODENAME)
+  export CURRENT_DIR=${BATS_TEST_TMPDIR}
+
+  sudo curl -fsSLq https://packages.mozilla.org/apt/repo-signing-key.gpg -o /etc/apt/keyrings/packages.mozilla.org.asc
+  sudo chmod a+r /etc/apt/keyrings/packages.mozilla.org.asc
+
+  cat >${CURRENT_DIR}/repositories.apt <<-EOF
+deb-src [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main
 EOF
-)
-  expected_file="/etc/apt/sources.list.d/tsuru_$(echo ${expected_source_file} | sha1sum | awk '{print $1}').list"
-  [ -r ${expected_file} ]
-  run cat ${expected_file}
-  assert_output "${expected_source_file}"
-  run sudo apt-key finger 2>/dev/null
-  assert_output --partial 'B0DE 9C5D EBF4 8635 9EB2  55B0 3B01 53D0 383F 073D'
 
-  expected_source_file=$(cat <<-EOF
-deb https://ppa.launchpadcontent.net/pogo-dev/stable/ubuntu ${UBUNTU_RELEASE} main
-deb-src https://ppa.launchpadcontent.net/pogo-dev/stable/ubuntu ${UBUNTU_RELEASE} main
-EOF
-)
+  [ -r /var/lib/tsuru/base/rc/os_dependencies ]
+  source /var/lib/tsuru/base/rc/os_dependencies
+
+  run os_dependencies
+  assert_success
+
+  expected_source_file="deb-src [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main"
   expected_file="/etc/apt/sources.list.d/tsuru_$(echo ${expected_source_file} | sha1sum | awk '{print $1}').list"
-  [ -r ${expected_file} ]
-  run cat ${expected_file}
+  [ -r "${expected_file}" ]
+  run cat "${expected_file}"
   assert_output "${expected_source_file}"
-  run sudo apt-key finger 2>/dev/null
-  assert_output --partial '2445 455D 0F8F B8F9 299E  7A0A F224 4A5C 0D4D 9B55'
+
+  run sudo apt-get update -y
+  assert_success
+  assert_output --partial "https://packages.mozilla.org/apt mozilla InRelease"
+}
+
+@test 'adding extra APT repositories from repositories.apt from ppa' {
+  export UBUNTU_RELEASE=$(source /etc/lsb-release && echo $DISTRIB_CODENAME)
+  export CURRENT_DIR=${BATS_TEST_TMPDIR}
+
+  cat >${CURRENT_DIR}/repositories.apt <<-EOF
+ppa:pogo-dev/stable
+EOF
+
+  [ -r /var/lib/tsuru/base/rc/os_dependencies ]
+  source /var/lib/tsuru/base/rc/os_dependencies
+
+  run os_dependencies
+  assert_success
+
+  expected_source_file=$(
+    cat <<-EOF
+deb [signed-by=/usr/share/keyrings/pogo-dev.gpg] https://ppa.launchpadcontent.net/pogo-dev/stable/ubuntu ${UBUNTU_RELEASE} main
+deb-src [signed-by=/usr/share/keyrings/pogo-dev.gpg] https://ppa.launchpadcontent.net/pogo-dev/stable/ubuntu ${UBUNTU_RELEASE} main
+EOF
+  )
+  expected_file="/etc/apt/sources.list.d/tsuru_$(echo "${expected_source_file}" | sha1sum | awk '{print $1}').list"
+
+  [ -r "${expected_file}" ]
+  run cat "${expected_file}"
+  assert_output "${expected_source_file}"
+
+  sudo apt-get clean
+  run sudo apt-get update -y
+  assert_success
+  assert_output --partial "https://ppa.launchpadcontent.net/pogo-dev/stable/ubuntu ${UBUNTU_RELEASE}/main Sources"
+  assert_output --partial "https://ppa.launchpadcontent.net/pogo-dev/stable/ubuntu ${UBUNTU_RELEASE}/main $(dpkg --print-architecture) Packages"
+}
+
+@test 'adding extra APT repositories from repositories.apt from ppa with fingerprint' {
+  export UBUNTU_RELEASE=$(source /etc/lsb-release && echo $DISTRIB_CODENAME)
+  export CURRENT_DIR=${BATS_TEST_TMPDIR}
+
+  cat >${CURRENT_DIR}/repositories.apt <<-EOF
+pogo-dev/daily 0x32D78285D050BE9F1B0030D0F0AE9179321F84C8
+EOF
+
+  [ -r /var/lib/tsuru/base/rc/os_dependencies ]
+  source /var/lib/tsuru/base/rc/os_dependencies
+
+  run os_dependencies
+  assert_success
+
+  expected_source_file=$(
+    cat <<-EOF
+deb [signed-by=/usr/share/keyrings/pogo-dev.gpg] https://ppa.launchpadcontent.net/pogo-dev/daily/ubuntu ${UBUNTU_RELEASE} main
+deb-src [signed-by=/usr/share/keyrings/pogo-dev.gpg] https://ppa.launchpadcontent.net/pogo-dev/daily/ubuntu ${UBUNTU_RELEASE} main
+EOF
+  )
+  expected_file="/etc/apt/sources.list.d/tsuru_$(echo "${expected_source_file}" | sha1sum | awk '{print $1}').list"
+  [ -r "${expected_file}" ]
+  run cat "${expected_file}"
+  assert_output "${expected_source_file}"
+
+  run sudo apt-get update -y
+  assert_success
+  assert_output --partial "https://ppa.launchpadcontent.net/pogo-dev/daily/ubuntu ${UBUNTU_RELEASE}/main Sources"
+  assert_output --partial "https://ppa.launchpadcontent.net/pogo-dev/daily/ubuntu ${UBUNTU_RELEASE}/main $(dpkg --print-architecture) Packages"
+
+  run gpg --no-default-keyring --keyring /usr/share/keyrings/pogo-dev.gpg --fingerprint
+  assert_success
+  assert_output --partial "32D7 8285 D050 BE9F 1B00  30D0 F0AE 9179 321F 84C8"
 }
 
 # vim: ft=bash
