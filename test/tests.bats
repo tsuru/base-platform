@@ -82,6 +82,9 @@ EOF
   export UBUNTU_RELEASE=$(source /etc/lsb-release && echo $DISTRIB_CODENAME)
   export CURRENT_DIR=${BATS_TEST_TMPDIR}
 
+  if [ ! -d "/etc/apt/keyrings/" ]; then
+    sudo mkdir -p /etc/apt/keyrings/
+  fi
   sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
   sudo chmod a+r /etc/apt/keyrings/docker.asc
 
@@ -106,6 +109,9 @@ EOF
   export UBUNTU_RELEASE=$(source /etc/lsb-release && echo $DISTRIB_CODENAME)
   export CURRENT_DIR=${BATS_TEST_TMPDIR}
 
+  if [ ! -d "/etc/apt/keyrings/" ]; then
+    sudo mkdir -p /etc/apt/keyrings/
+  fi
   sudo curl -fsSLq https://packages.mozilla.org/apt/repo-signing-key.gpg -o /etc/apt/keyrings/packages.mozilla.org.asc
   sudo chmod a+r /etc/apt/keyrings/packages.mozilla.org.asc
 
