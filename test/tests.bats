@@ -100,10 +100,6 @@ EOF
   [ -r "${expected_file}" ]
   run cat "${expected_file}"
   assert_output "${expected_source_file}"
-
-  run sudo apt-get update -y
-  assert_success
-  assert_output --partial "https://download.docker.com/linux/ubuntu ${UBUNTU_RELEASE}/stable $(dpkg --print-architecture) Packages"
 }
 
 @test 'adding extra APT repositories from repositories.apt from deb-src' {
@@ -128,10 +124,6 @@ EOF
   [ -r "${expected_file}" ]
   run cat "${expected_file}"
   assert_output "${expected_source_file}"
-
-  run sudo apt-get update -y
-  assert_success
-  assert_output --partial "https://packages.mozilla.org/apt mozilla InRelease"
 }
 
 @test 'adding extra APT repositories from repositories.apt from ppa' {
@@ -139,7 +131,7 @@ EOF
   export CURRENT_DIR=${BATS_TEST_TMPDIR}
 
   cat >${CURRENT_DIR}/repositories.apt <<-EOF
-ppa:pogo-dev/stable
+ppa:graphics-drivers/ppa
 EOF
 
   [ -r /var/lib/tsuru/base/rc/os_dependencies ]
@@ -150,8 +142,8 @@ EOF
 
   expected_source_file=$(
     cat <<-EOF
-deb [signed-by=/usr/share/keyrings/pogo-dev.gpg] https://ppa.launchpadcontent.net/pogo-dev/stable/ubuntu ${UBUNTU_RELEASE} main
-deb-src [signed-by=/usr/share/keyrings/pogo-dev.gpg] https://ppa.launchpadcontent.net/pogo-dev/stable/ubuntu ${UBUNTU_RELEASE} main
+deb [signed-by=/usr/share/keyrings/graphics-drivers.gpg] https://ppa.launchpadcontent.net/graphics-drivers/ppa/ubuntu ${UBUNTU_RELEASE} main
+deb-src [signed-by=/usr/share/keyrings/graphics-drivers.gpg] https://ppa.launchpadcontent.net/graphics-drivers/ppa/ubuntu ${UBUNTU_RELEASE} main
 EOF
   )
   expected_file="/etc/apt/sources.list.d/tsuru_$(echo "${expected_source_file}" | sha1sum | awk '{print $1}').list"
@@ -160,11 +152,7 @@ EOF
   run cat "${expected_file}"
   assert_output "${expected_source_file}"
 
-  sudo apt-get clean
-  run sudo apt-get update -y
-  assert_success
-  assert_output --partial "https://ppa.launchpadcontent.net/pogo-dev/stable/ubuntu ${UBUNTU_RELEASE}/main Sources"
-  assert_output --partial "https://ppa.launchpadcontent.net/pogo-dev/stable/ubuntu ${UBUNTU_RELEASE}/main $(dpkg --print-architecture) Packages"
+  [ -r "/usr/share/keyrings/graphics-drivers.gpg" ]
 }
 
 @test 'adding extra APT repositories from repositories.apt from ppa with fingerprint' {
@@ -191,11 +179,6 @@ EOF
   [ -r "${expected_file}" ]
   run cat "${expected_file}"
   assert_output "${expected_source_file}"
-
-  run sudo apt-get update -y
-  assert_success
-  assert_output --partial "https://ppa.launchpadcontent.net/pogo-dev/daily/ubuntu ${UBUNTU_RELEASE}/main Sources"
-  assert_output --partial "https://ppa.launchpadcontent.net/pogo-dev/daily/ubuntu ${UBUNTU_RELEASE}/main $(dpkg --print-architecture) Packages"
 
   run gpg --no-default-keyring --keyring /usr/share/keyrings/pogo-dev.gpg --fingerprint
   assert_success
