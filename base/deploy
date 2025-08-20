@@ -60,9 +60,32 @@ function pre_deploy() {
 }
 
 function post_deploy() {
-  if [ ! -f ${CURRENT_DIR}/Procfile ] && [ ! -f ${CURRENT_DIR}/tsuru.yml ] && [ ! -f ${CURRENT_DIR}/tsuru.yaml ] && [ -f ${SOURCE_DIR}/default/Procfile ]; then
-    cp ${SOURCE_DIR}/default/Procfile ${CURRENT_DIR}/Procfile
-    touch ${APP_DIR}/.default_procfile
+  if [ ! -f ${CURRENT_DIR}/Procfile ]; then
+    tsuru_yaml=""
+    if [ -f ${CURRENT_DIR}/tsuru.yml ]; then
+      tsuru_yaml="${CURRENT_DIR}/tsuru.yml"
+    elif [ -f ${CURRENT_DIR}/tsuru.yaml ]; then
+      tsuru_yaml="${CURRENT_DIR}/tsuru.yaml"
+    fi
+
+    use_default_procfile=1
+    if [ -n "$tsuru_yaml" ]; then
+      # Look for 'processes:' and at least one '- name:' and 'command:' under it
+      if awk '
+        $1 == "processes:" {in_proc=1; next}
+        in_proc && $1 == "-" && $2 == "name:" {name=1}
+        in_proc && $1 == "command:" {cmd=1}
+        name && cmd {found=1; exit}
+        END {exit !found}
+      ' "$tsuru_yaml"; then
+        use_default_procfile=0
+      fi
+    fi
+
+    if [ $use_default_procfile -eq 1 ] && [ -f ${SOURCE_DIR}/default/Procfile ]; then
+      cp ${SOURCE_DIR}/default/Procfile ${CURRENT_DIR}/Procfile
+      touch ${APP_DIR}/.default_procfile
+    fi
   fi
 }
 
