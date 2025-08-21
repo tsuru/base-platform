@@ -7,19 +7,19 @@
 # removes all '#' and all characters afterwards; trim whitespaces; carriage return and empty lines
 function cat_without_hash_comments() {
   local file_path=${1}
-  cat ${file_path} \
-    | sed "s/#.*$//g" \
-    | sed "s/^[[:space:]]*//g" \
-    | sed "s/[[:space:]]*$//g" \
-    | sed "s/\r$//" \
-    | sed "/^$/d"
+  cat ${file_path} |
+    sed "s/#.*$//g" |
+    sed "s/^[[:space:]]*//g" |
+    sed "s/[[:space:]]*$//g" |
+    sed "s/\r$//" |
+    sed "/^$/d"
 }
 
 function os_dependencies() {
   if [[ -f "${CURRENT_DIR}/repositories.apt" ]]; then
     echo_debug ">>> repositories.apt found: adding extra APT repositories"
 
-    while read repo ; do
+    while read repo; do
       add_repository ${repo}
     done < <(cat_without_hash_comments "${CURRENT_DIR}/repositories.apt")
   fi
@@ -34,38 +34,54 @@ function os_dependencies() {
 
 function add_repository() {
   local repository=${1}
+  local repository_entries
+  local ppa
+  local fingerprint
+  local user
+  local filesum
 
   case ${repository} in
-    deb*)
-      local repository_entries=${*};;
+  deb*)
+    repository_entries=${*}
+    ;;
 
-    *)
-      local ppa=$(echo ${repository} | sed 's/ppa://')
+  *)
+    ppa=${repository/#ppa:/}
+    fingerprint=${2:-${ppa}}
+    user=$(echo "${ppa}" | awk -F / '{print $1}')
 
-      local repository_entries=$(cat <<-EOF
-deb https://ppa.launchpadcontent.net/${ppa}/ubuntu ${UBUNTU_RELEASE} main
-deb-src https://ppa.launchpadcontent.net/${ppa}/ubuntu ${UBUNTU_RELEASE} main
+    repository_entries=$(
+      cat <<-EOF
+deb [signed-by=/usr/share/keyrings/${user}.gpg] https://ppa.launchpadcontent.net/${ppa}/ubuntu ${UBUNTU_RELEASE} main
+deb-src [signed-by=/usr/share/keyrings/${user}.gpg] https://ppa.launchpadcontent.net/${ppa}/ubuntu ${UBUNTU_RELEASE} main
 EOF
-)
-      local fingerprint=${2:-${ppa}}
-      get_ppa_key ${fingerprint};;
+    )
+
+    get_ppa_key "${fingerprint}" "${user}"
+    ;;
   esac
 
-  local filesum=$(echo ${repository_entries} | sha1sum | awk '{print $1}')
-  echo "${repository_entries}" | sudo -E tee >/dev/null 2>&1 "/etc/apt/sources.list.d/tsuru_${filesum}.list"
+  filesum=$(echo "${repository_entries}" | sha1sum | awk '{print $1}')
+  echo "${repository_entries}" | sudo -E tee "/etc/apt/sources.list.d/tsuru_${filesum}.list" >/dev/null 2>&1
 }
 
 function get_ppa_key() {
   local ppa_or_fingerprint=${1}
+  local user=${2}
+  local fingerprint
+  local repo
 
   if [[ ${ppa_or_fingerprint} =~ ^0x.+ ]]; then
-    local fingerprint=${ppa_or_fingerprint}
+    fingerprint=${ppa_or_fingerprint}
   else
-    user=$(echo ${ppa_or_fingerprint} | awk -F / '{print $1}')
-    repo=$(echo ${ppa_or_fingerprint} | awk -F / '{print $2}')
+    repo=$(echo "${ppa_or_fingerprint}" | awk -F / '{print $2}')
     api_url="https://launchpad.net/api/1.0/~${user}/+archive/ubuntu/${repo}"
-    local fingerprint=$(curl -sS "${api_url}" | jq -r ".signing_key_fingerprint")
+    fingerprint=$(curl -sS "${api_url}" | jq -r ".signing_key_fingerprint")
   fi
 
-  sudo -E apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv ${fingerprint}
+  local gpg_tmp_dir
+  gpg_tmp_dir=$(mktemp -d /tmp/gpg-XXXXXX)
+  chmod 700 "${gpg_tmp_dir}"
+  sudo gpg --homedir "${gpg_tmp_dir}" --no-default-keyring --keyring /usr/share/keyrings/"${user}".gpg --keyserver keyserver.ubuntu.com --recv-keys "${fingerprint}"
+  rm -rf "${gpg_tmp_dir}"
 }
