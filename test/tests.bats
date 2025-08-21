@@ -178,7 +178,7 @@ EOF
   if [ ! -d "/etc/apt/keyrings/" ]; then
     sudo mkdir -p /etc/apt/keyrings/
   fi
-  sudo curl -fsSLq https://packages.mozilla.org/apt/repo-signing-key.gpg -o /etc/apt/keyrings/packages.mozilla.org.asc
+  sudo curl -fsSL https://packages.mozilla.org/apt/repo-signing-key.gpg -o /etc/apt/keyrings/packages.mozilla.org.asc
   sudo chmod a+r /etc/apt/keyrings/packages.mozilla.org.asc
 
   cat >${CURRENT_DIR}/repositories.apt <<-EOF
