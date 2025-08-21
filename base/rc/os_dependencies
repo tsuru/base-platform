@@ -79,5 +79,9 @@ function get_ppa_key() {
     fingerprint=$(curl -sS "${api_url}" | jq -r ".signing_key_fingerprint")
   fi
 
-  sudo gpg --homedir /tmp --no-default-keyring --keyring /usr/share/keyrings/"${user}".gpg --keyserver keyserver.ubuntu.com --recv-keys "${fingerprint}"
+  local gpg_tmp_dir
+  gpg_tmp_dir=$(mktemp -d /tmp/gpg-XXXXXX)
+  chmod 700 "${gpg_tmp_dir}"
+  sudo gpg --homedir "${gpg_tmp_dir}" --no-default-keyring --keyring /usr/share/keyrings/"${user}".gpg --keyserver keyserver.ubuntu.com --recv-keys "${fingerprint}"
+  rm -rf "${gpg_tmp_dir}"
 }
