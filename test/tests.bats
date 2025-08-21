@@ -33,6 +33,72 @@ load '/opt/bats-assert/load.bash'
   [ ! -f /home/ubuntu/.bash_logout ]
 }
 
+@test 'should copy default Procfile when tsuru.yml does not have processes defined' {
+  export APP_DIR=${BATS_TEST_TMPDIR}/app
+  export CURRENT_DIR=${APP_DIR}/current
+  export SOURCE_DIR=/var/lib/tsuru
+
+  [ -r /var/lib/tsuru/base/deploy ]
+  sudo sed -i '/source \${SOURCE_DIR}\/base\/rc\/config/,$d' /var/lib/tsuru/base/deploy
+  source /var/lib/tsuru/base/deploy
+
+  sudo mkdir -p ${SOURCE_DIR}/default
+  mkdir -p ${CURRENT_DIR}
+
+  # Create tsuru.yml without processes
+  cat >${CURRENT_DIR}/tsuru.yml <<-EOF
+healthcheck:
+  path: /healthcheck
+  method: GET
+  status: 200
+  match: .*WORKING.*
+  allowed_failures: 5
+  force_restart: true
+EOF
+
+  # Create default Procfile
+  echo "web: gunicorn app:app" | sudo tee ${SOURCE_DIR}/default/Procfile
+
+  run post_deploy
+  assert_success
+
+  # Should create Procfile from default
+  [ -f ${CURRENT_DIR}/Procfile ]
+  [ -f ${APP_DIR}/.default_procfile ]
+}
+
+@test 'should not copy default Procfile when tsuru.yaml has processes defined' {
+  export APP_DIR=${BATS_TEST_TMPDIR}/app
+  export CURRENT_DIR=${APP_DIR}/current
+  export SOURCE_DIR=/var/lib/tsuru
+
+  [ -r /var/lib/tsuru/base/deploy ]
+  sudo sed -i '/source \${SOURCE_DIR}\/base\/rc\/config/,$d' /var/lib/tsuru/base/deploy
+  source /var/lib/tsuru/base/deploy
+
+  sudo mkdir -p ${SOURCE_DIR}/default
+  mkdir -p ${CURRENT_DIR}
+
+  # Create tsuru.yml with processes
+  cat >${CURRENT_DIR}/tsuru.yaml <<-EOF
+processes:
+  - name: web
+    command: python app.py
+  - name: worker
+    command: celery worker
+EOF
+
+  # Create default Procfile
+  echo "web: gunicorn app:app" | sudo tee ${SOURCE_DIR}/default/Procfile
+
+  run post_deploy
+  assert_success
+
+  # Should NOT create Procfile when tsuru.yml has processes
+  [ ! -f ${CURRENT_DIR}/Procfile ]
+  [ ! -f ${APP_DIR}/.default_procfile ]
+}
+
 @test 'reading requirements.apt w/ carriage return (CR+LF)' {
   echo -e 'openssl\r' >${BATS_TEST_TMPDIR}/requirements.apt
   echo -e 'vim\r' >>${BATS_TEST_TMPDIR}/requirements.apt
