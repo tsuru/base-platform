@@ -4,7 +4,7 @@ jobs:
   test:
     strategy:
       matrix:
-        version: ["20.04", "22.04", "24.04.3", latest]
+        version: ["20.04", "22.04", "24.04", latest]
 
     runs-on: ubuntu-latest
 
@@ -23,7 +23,7 @@ jobs:
 
     strategy:
       matrix:
-        version: ["20.04", "22.04", "24.04.3", latest]
+        version: ["20.04", "22.04", "24.04", latest]
 
     runs-on: ubuntu-latest
 
